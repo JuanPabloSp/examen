@@ -31,12 +31,12 @@ El diseño debe contemplar:
 /docs
 
 **SOLUCIÓN — PARTE 1:**
-Diseñamos un monorepo ordenado donde cada componente se encuentra aislado en su propia carpeta para asegurar la escalabilidad:
+Diseño un monorepo ordenado donde cada componente se encuentra aislado en su propia carpeta para asegurar la escalabilidad:
 *   `/frontend`: Contiene el código fuente de la interfaz de usuario (React/Next.js).
 *   `/backend`: Contiene los servicios API backend (Node.js/Spring Boot).
 *   `/infrastructure`: Contiene el código de infraestructura como código (IaC con Terraform).
 *   `/docs`: Contiene la documentación técnica del proyecto en Markdown.
-*   `.github/workflows/`: Directorio centralizado donde residen todos los archivos de configuración de GitHub Actions.
+*   `.github/workflows/`: Directorio centralizado donde organizo todos los archivos de configuración de GitHub Actions.
 
 > :camera: **[CAPTURA DE PANTALLA: ESTRUCTURA DEL MONOREPO]**
 > ![Estructura del Monorepo en VS Code](./img/Captura%20de%20pantalla%202026-05-29%20101121.png)
@@ -48,15 +48,14 @@ Implementar lógica para:
 •	Detectar componentes modificados
 
 **SOLUCIÓN — PARTE 2:**
-1.  **Ignorar Documentación**: En el disparador del orquestador principal (`main.yml`), usamos `paths-ignore` para asegurar que cambios exclusivos en `/docs` o archivos `.md` no disparen ejecuciones de computación inútiles.
-2.  **Detectar Componentes Modificados**: Usamos la acción verificada `dorny/paths-filter` para auditar qué directorios sufrieron cambios.
-3.  **Ejecutar solo pipelines necesarios**: Los resultados del filtro se exportan como `outputs` lógicos del primer job, permitiendo que los jobs subsecuentes usen la condicional `if` para ejecutarse o saltarse según corresponda.
+1.  **Ignorar Documentación**: En el disparador del orquestador principal (`main.yml`), utilizo `paths-ignore` para asegurar que cambios exclusivos en `/docs` o archivos `.md` no disparen ejecuciones de computación inútiles.
+2.  **Detectar Componentes Modificados**: Utilizo la acción verificada `dorny/paths-filter` para auditar qué directorios sufrieron cambios.
+3.  **Ejecutar solo pipelines necesarios**: Los resultados del filtro los exporto como `outputs` lógicos del primer job, lo cual permite que los jobs subsecuentes usen la condicional `if` para ejecutarse o saltarse según corresponda.
 
 > :camera: **[CAPTURA DE PANTALLA: SELECTIVE EXECUTION (OMISIÓN)]**
 > ![Grafo de Ejecución Selectiva - Jobs Omitidos](./img/Captura%20de%20pantalla%202026-05-29%20100727.png)
 
-
-*Ejemplo en el orquestador principal:*
+*Ejemplo en mi orquestador principal:*
 ```yaml
 on:
   push:
@@ -70,9 +69,9 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@v4
       - id: filter
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        uses: dorny/paths-filter@v3
         with:
           filters: |
             frontend:
@@ -86,13 +85,13 @@ Crear reusable workflows para:
 •	validaciones comunes
 
 **SOLUCIÓN — PARTE 3:**
-Creamos tres workflows reutilizables parametrizados bajo el disparador `workflow_call` en `.github/workflows/` para centralizar y estandarizar el CI/CD corporativo:
-1.  **Validaciones Comunes (`reusable-validate.yml`)**: Centraliza los análisis estáticos de código (linters) y escaneos de seguridad corporativos (SAST). Recibe el `target-path` como parámetro.
+He creado tres workflows reutilizables parametrizados bajo el disparador `workflow_call` en `.github/workflows/` para centralizar y estandarizar el CI/CD de la empresa:
+1.  **Validaciones Comunes (`reusable-validate.yml`)**: Centraliza los análisis estáticos de código (linters) y escaneos de seguridad (SAST). Recibe el `target-path` como parámetro.
 2.  **Testing (`reusable-test.yml`)**: Ejecuta el set de pruebas unitarias sobre un entorno aislado. Recibe como parámetros `node-version`, `os` y `directory`, optimizando dependencias mediante caché.
-3.  **Compilación (`reusable-build.yml`)**: Compila la aplicación, genera un reporte y empaqueta el compilado usando `actions/upload-artifact`. Define outputs lógicos de éxito (`build-status`) consumibles por el pipeline padre.
+3.  **Compilación (`reusable-build.yml`)**: Compila la aplicación, genera un reporte y empaqueta el compilado usando `actions/upload-artifact`. Define outputs lógicos de éxito (`build-status`) consumibles por mi pipeline padre.
 
 *   **Comprobación Práctica en Laboratorio (Test Realizado)**:
-    Para validar estos workflows, implementamos lógica funcional y ligera en `reusable-validate.yml` que realiza un análisis sintáctico con `node --check` sobre los archivos JavaScript reales del monorepo (`index.js`) y un escáner de seguridad automatizado basado en `grep` para detectar fugas de contraseñas u otros secretos corporativos. Los resultados del test corren de forma exitosa en el entorno oficial de GitHub Actions.
+    Para validar estos workflows, he implementado lógica funcional y ligera en `reusable-validate.yml` que realiza un análisis sintáctico con `node --check` sobre los archivos JavaScript reales de mi monorepo (`index.js`) y un escáner de seguridad automatizado basado en `grep` para detectar posibles fugas de contraseñas u otros secretos. He verificado que los resultados de mis pruebas corren de forma exitosa en GitHub Actions.
 ________________________________________
 Ejercicio 2 — Seguridad enterprise
 Objetivo
@@ -105,8 +104,8 @@ Aplicar:
 •	permisos específicos por job
 
 **SOLUCIÓN — PERMISSIONS:**
-Aplicamos el principio de mínimo privilegio de manera estricta:
-1.  **Globales**: A nivel superior del workflow orquestador declaramos únicamente los permisos mínimos necesarios requeridos por los workflows reutilizables y jobs generales, previniendo que cualquier paso comprometa el repositorio:
+Aplico el principio de mínimo privilegio de manera estricta en mis diseños:
+1.  **Globales**: A nivel superior de mi workflow orquestador declaro únicamente los privilegios mínimos necesarios requeridos por los workflows reutilizables y jobs generales, previniendo que cualquier paso comprometa el repositorio:
     ```yaml
     permissions:
       contents: read
@@ -121,9 +120,9 @@ Aplicar:
 •	control supply chain
 
 **SOLUCIÓN — ACTIONS EXTERNAS:**
-1.  **Version Pinning por Git Commit SHA**: En lugar de usar tags mutables (ej. `@v4`), usamos el hash SHA inmutable de 40 caracteres. Esto previene ataques de inyección en la cadena de suministro si un tag es re-apuntado maliciosamente.
-    *   *Ejemplo Seguro:* `uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6`
-2.  **Control de Supply Chain**: Se implementan políticas empresariales para admitir únicamente acciones de desarrolladores verificados en GitHub Marketplace o repositorios internos de la organización.
+1.  **Version Pinning por Git Commit SHA / Tags Estables**: En mi diseño, implemento el uso de tags estables verificados o hashes SHA inmutables de 40 caracteres en lugar de tags completamente mutables (como `@main` o branches de desarrollo). Esto previene ataques de inyección en la cadena de suministro si un tag es re-apuntado maliciosamente.
+    *   *Ejemplo Seguro:* `uses: actions/checkout@v4` (apuntando a una versión oficial y controlada).
+2.  **Control de Supply Chain**: Recomiendo establecer políticas corporativas para admitir únicamente acciones de desarrolladores verificados en GitHub Marketplace o de repositorios internos firmados por la organización.
 ________________________________________
 Secrets
 Diseñar:
@@ -131,10 +130,10 @@ Diseñar:
 •	uso correcto scope
 
 **SOLUCIÓN — SECRETS:**
-Diseñamos un modelo de tres capas para segregación de datos sensibles:
-1.  **Secretos de Organización**: Para credenciales corporativas generales (ej. licencias de SonarQube, tokens de herramientas de análisis) compartidos de forma controlada entre repositorios.
-2.  **Secretos de Repositorio**: Específicos de este monorepo (ej. integraciones de chat de alerta, tokens internos).
-3.  **Secretos de Entorno (Environment Secrets)**: Datos sensibles de alta seguridad (ej. credenciales de AWS, contraseñas de bases de datos de producción) que solo se cargan si el job se ejecuta en el entorno adecuado y ha pasado las aprobaciones correspondientes.
+Diseño un modelo de tres capas para la segregación segura de mis datos sensibles:
+1.  **Secretos de Organización**: Para credenciales corporativas compartidas de forma controlada entre múltiples repositorios (ej. licencias globales de SonarQube).
+2.  **Secretos de Repositorio**: Específicos para mi monorepo (ej. integraciones de alertas de chat, tokens internos).
+3.  **Secretos de Entorno (Environment Secrets)**: Datos de alta confidencialidad (ej. credenciales de AWS de producción) que solo se cargan si el job se ejecuta bajo el contexto del entorno adecuado y tras pasar las aprobaciones correspondientes.
 ________________________________________
 Environments
 Configurar:
@@ -145,11 +144,11 @@ Production debe:
 •	limitar despliegues
 
 **SOLUCIÓN — ENVIRONMENTS:**
-Definimos los entornos protegidos desde GitHub:
-1.  **Staging**: Entorno de pre-producción sin protecciones manuales estrictas.
+Configuro los entornos protegidos en mi diseño de la siguiente manera:
+1.  **Staging**: Entorno de validación pre-producción sin protecciones manuales estrictas.
 2.  **Production**:
-    *   **Aprobaciones Requeridas**: Se configura una política nativa en GitHub que exige la firma aprobatoria de al menos dos administradores de TI antes de iniciar la ejecución de despliegue.
-    *   **Limitación de Despliegues**: Se restringen los despliegues de producción para que solo puedan ejecutarse cuando los commits provengan de la rama principal `main` (`github.ref == 'refs/heads/main'`).
+    *   **Aprobaciones Requeridas**: Configuro una política nativa en GitHub que exige la firma aprobatoria de al menos dos administradores antes de iniciar el despliegue.
+    *   **Limitación de Despliegues**: Restrinjo los despliegues de producción para que solo puedan ejecutarse cuando los commits provengan de mi rama principal `main` (`github.ref == 'refs/heads/main'`).
 ________________________________________
 OIDC
 Explicar:
@@ -158,9 +157,9 @@ Explicar:
 •	Cuándo utilizarlo
 
 **SOLUCIÓN — OIDC:**
-*   **Qué problema resuelve**: Elimina la necesidad de almacenar credenciales Cloud de larga duración (ej. claves de AWS ACCESS_KEY) como secretos en los repositorios de GitHub, reduciendo la superficie de ataque y el esfuerzo de rotar contraseñas manualmente.
-*   **Cómo mejora la seguridad**: GitHub Actions genera dinámicamente un token OIDC inalterable de corta duración en cada ejecución. El proveedor Cloud (AWS/Azure/GCP) valida la procedencia del repositorio/workflow federado y otorga temporalmente un rol IAM de pocos minutos mediante una relación de confianza segura.
-*   **Cuándo utilizarlo**: En todos los pipelines que requieran interactuar con plataformas en la nube para el aprovisionamiento de infraestructura o despliegue de software.
+*   **Qué problema resuelve**: Resuelve la necesidad de almacenar credenciales Cloud de larga duración (como AWS ACCESS_KEY) en los secretos de mi repositorio de GitHub, eliminando el riesgo de robo o expiración y el esfuerzo de rotarlas manualmente.
+*   **Cómo mejora la seguridad**: GitHub Actions genera dinámicamente un token OIDC (JWT) temporal de corta duración para cada ejecución. El proveedor Cloud (AWS/Azure/GCP) valida la procedencia del repositorio/workflow federado mediante una relación de confianza segura y otorga temporalmente un rol IAM de pocos minutos, reduciendo drásticamente la superficie de ataque.
+*   **Cuándo utilizarlo**: Lo utilizo en todos los pipelines que requieran interactuar con plataformas en la nube para aprovisionar infraestructura o desplegar software de forma segura.
 ________________________________________
 Ejercicio 3 — Matrix y optimización
 Objetivo
@@ -174,14 +173,14 @@ Implementar:
 •	include/exclude
 
 **SOLUCIÓN — MATRIX:**
-Para paralelizar las pruebas del backend en múltiples plataformas y versiones de Node.js, configuramos una matriz inteligente que excluye e incluye casos específicos por razones de coste y compatibilidad corporativa:
+Para paralelizar las pruebas de mi backend en múltiples plataformas y versiones de Node.js, he configurado una matriz inteligente que excluye casos específicos por razones de coste y compatibilidad:
 ```yaml
 strategy:
   matrix:
     os: [ubuntu-latest, windows-latest]
     runtime: ["18", "20"]
     exclude:
-      # Exclusión corporativa para ahorrar créditos y evitar problemas de drivers en Windows
+      # Exclusión corporativa para ahorrar créditos y evitar problemas en Windows
       - os: windows-latest
         runtime: "18"
 ```
@@ -197,10 +196,10 @@ Aplicar:
 •	reutilización lógica
 
 **SOLUCIÓN — OPTIMIZACIÓN:**
-1.  **Cache**: Usamos la acción `actions/cache` en los reusables para almacenar dependencias (`node_modules`, `.npm`) basadas en el hash de los archivos lock, evitando descargas redundantes.
-2.  **Paralelización**: Los jobs de validación y test de frontend, backend e infraestructura corren de manera paralela e independiente en diferentes runners.
-3.  **Concurrency (Concurrencia)**: Agrupamos las ejecuciones dinámicamente por flujo y rama (`cancel-in-progress: true`), cancelando de forma automática ejecuciones obsoletas del mismo branch si se realiza un nuevo commit.
-4.  **Reutilización de Lógica**: Centralización de tareas de compilación y validación en workflows reutilizables parametrizados.
+1.  **Cache**: Utilizo la acción `actions/cache` en mis workflows reutilizables para almacenar dependencias (`node_modules`, `.npm`) basadas en el hash de los archivos lock, evitando descargas redundantes en cada ejecución.
+2.  **Paralelización**: Ejecuto los jobs de validación y test de frontend, backend e infraestructura de manera paralela e independiente en diferentes runners.
+3.  **Concurrency (Concurrencia)**: Agrupo mis ejecuciones dinámicamente por flujo y rama (`cancel-in-progress: true`), cancelando automáticamente ejecuciones obsoletas del mismo branch si realizo un nuevo push de código.
+4.  **Reutilización de Lógica**: Centralizo las tareas en mis workflows reutilizables parametrizados.
 ________________________________________
 Reporting
 Generar:
@@ -208,12 +207,11 @@ Generar:
 •	artifacts relevantes
 
 **SOLUCIÓN — REPORTING:**
-1.  **Summaries Markdown**: Al final de la ejecución, generamos un reporte consolidado utilizando la variable corporativa `$GITHUB_STEP_SUMMARY` para plasmar los estados de cada job en una tabla visual.
-2.  **Artifacts Relevantes**: Subimos los reportes y binarios compilados de compilación usando la acción `actions/upload-artifact` a nivel de workflow reusable.
+1.  **Summaries Markdown**: Al final de la ejecución, genero un reporte consolidado utilizando la variable `$GITHUB_STEP_SUMMARY` para plasmar los estados de cada job en una tabla visual.
+2.  **Artifacts Relevantes**: Subo los reportes y binarios generados en la compilación usando la acción `actions/upload-artifact` a nivel de mi workflow reusable.
 
 > :camera: **[CAPTURA DE PANTALLA: CORPORATE STEP SUMMARY REPORT]**
 > ![Tabla Corporativa de Resumen de Ejecución en Markdown](./img/Captura%20de%20pantalla%202026-05-29%20101303.png)
-
 ________________________________________
 Ejercicio 4 — Self-hosted runners
 Objetivo
@@ -232,17 +230,22 @@ Debe incluirse:
 •	estrategia organización runners
 
 **SOLUCIÓN — EJERCICIO 4:**
-1.  **Cuándo usarlos**: Cuando se necesita acceso directo a redes internas (VPC privadas, clústeres locales), hardware de alto rendimiento no estándar (GPUs, alta RAM), o control absoluto del sistema operativo del runner.
-2.  **Riesgos de Seguridad**: Ejecución de código arbitrario no verificado que podría comprometer la red corporativa. Persistencia de estado (los runners no son limpios por defecto y pueden conservar secretos o basura de jobs anteriores).
-3.  **Mitigación y Aislamiento**: Implementación de runners efímeros automatizados en Kubernetes (mediante *Actions Runner Controller*) que se destruyen inmediatamente tras procesar un job, impidiendo la persistencia de datos.
-4.  **Segmentación y Labels**: Etiquetar runners de producción con etiquetas específicas (`runs-on: [self-hosted, linux, x64, prod-network]`) para evitar que jobs de desarrollo corran en la infraestructura productiva.
+1.  **Cuándo utilizarlos**: Los propongo cuando necesito acceso directo a recursos dentro de redes privadas internas (VPC privadas, bases de datos internas), hardware de alto rendimiento específico (GPUs, alta RAM), o control absoluto del sistema operativo del runner.
+2.  **Riesgos de Seguridad**: Identifico la ejecución de código arbitrario no confiable que pueda comprometer la red corporativa, así como la persistencia de estado (los runners no son limpios por defecto y pueden conservar basura de jobs anteriores si no se configuran bien).
+3.  **Mitigación y Aislamiento**: Propongo implementar runners efímeros automatizados en Kubernetes (mediante *Actions Runner Controller*) que se destruyen inmediatamente tras procesar un job, impidiendo la persistencia de datos.
+4.  **Segmentación y Labels**: Etiqueto mis runners de producción con etiquetas específicas para evitar que jobs de desarrollo corran en la infraestructura productiva.
 
-**Ventajas y Desventajas:**
-*   *Ventajas*: Acceso local a redes privadas, costes de cómputo fijos controlados, personalización de hardware.
-*   *Desventajas*: Responsabilidad total sobre el mantenimiento, parches y seguridad; riesgos de secuestro de infraestructura.
+*Mi Tabla Comparativa de Ventajas y Desventajas:*
+*   *Ventajas*: Acceso local a redes privadas, costes de cómputo fijos controlados, personalización de hardware a medida.
+*   *Desventajas*: Asumo la responsabilidad total del mantenimiento, parches y seguridad; riesgos de secuestro de infraestructura.
+
+*Ejemplo de mi configuración `runs-on`:*
+```yaml
+runs-on: [self-hosted, linux, x64, prod-network]
+```
 
 **Estrategia de Organización:**
-Agrupamos los runners corporativos a nivel de **Organización en GitHub** mediante **Runner Groups** seguros, aplicando políticas de accesibilidad para permitir su uso exclusivo únicamente a repositorios críticos clasificados de producción.
+Agrupo los runners corporativos a nivel de **Organización en GitHub** mediante **Runner Groups** seguros, aplicando políticas de accesibilidad para permitir su uso exclusivo únicamente a los repositorios que yo clasifique como críticos de producción.
 ________________________________________
 Ejercicio 5 — Troubleshooting
 Objetivo
@@ -256,13 +259,13 @@ El alumno debe:
 •	Explicar cómo resolverlas
 
 **SOLUCIÓN — CASO A:**
-*   **Posibles Causas**:
+*   **Posibles Causas que identifico**:
     1.  Falta de la cláusula de dependencia `needs: [test]` o el job previo de test falló y silenció el resultado.
-    2.  Condición lógica `if` mal evaluada en el deploy (ej. `if: github.ref == 'refs/heads/main'` pero se ejecuta en otra rama).
+    2.  Condición lógica `if` mal evaluada en mi deploy (ej. `if: github.ref == 'refs/heads/main'` pero se está ejecutando desde otra rama).
     3.  Aprobaciones pendientes bloqueando el environment en GitHub.
     4.  Falta de permisos OIDC globales denegando el token de inicio de sesión.
-*   **Diagnóstico**: Auditar el grafo del pipeline para ver si el job está "Skipped" (omitido) u "Omitido por dependencias". Examinar los logs iniciales de "Set up job" para revisar la validez de los permisos de tokens.
-*   **Resolución**: Configurar `needs` correctos, adecuar condicionales `if: success()` y verificar la aprobación y los branches habilitados en los ajustes del Environment de GitHub.
+*   **Mi Estrategia de Diagnóstico**: Auditaría el grafo del pipeline para ver si el job está "Skipped" (omitido) u "Omitido por dependencias". Examinaría los logs iniciales de "Set up job" para revisar la validez de los permisos de tokens.
+*   **Mi Propuesta de Resolución**: Configurar `needs` correctos, adecuar condicionales `if: success()` y verificar la aprobación y los branches habilitados en los ajustes del Environment de GitHub.
 ________________________________________
 Caso B
 Una matrix genera más jobs de los esperados.
@@ -272,9 +275,9 @@ El alumno debe:
 •	Proponer solución
 
 **SOLUCIÓN — CASO B:**
-*   **Por qué ocurre**: GitHub Actions realiza una multiplicación cartesiana de todos los arrays provistos en los parámetros de la matriz (ej. 3 sistemas operativos * 3 runtimes = 9 jobs). Si un usuario añade objetos en el bloque `include` con llaves erróneas o de manera no coincidente, GitHub Actions los interpretará como nuevas combinaciones adicionales e incrementará la lista de jobs inesperadamente.
-*   **Identificar errores posibles**: Confundir el bloque `include` con un filtro en lugar de una adición, o cometer erratas ortográficas en los nombres de las claves del `include`.
-*   **Solución**: Utilizar el bloque `exclude` explícitamente para filtrar combinaciones. Si se requiere una lista estática de combinaciones sin multiplicación cartesiana, omitir las claves del nivel superior y definir la lista de combinaciones deseadas directamente dentro de un `include` vacío:
+*   **Por qué ocurre**: Explico que esto ocurre debido a que GitHub Actions realiza una multiplicación cartesiana de todos los arrays provistos en los parámetros de la matriz (ej. 3 sistemas operativos * 3 runtimes = 9 jobs). Si añado objetos en el bloque `include` con llaves erróneas o de manera no coincidente, GitHub Actions los interpretará como nuevas combinaciones adicionales e incrementará la lista de jobs inesperadamente.
+*   **Errores posibles que identifico**: Confundir el bloque `include` con un filtro en lugar de una adición, o cometer erratas ortográficas en los nombres de las claves del `include`.
+*   **Mi Propuesta de Solución**: Sugiero utilizar el bloque `exclude` explícitamente para filtrar combinaciones. Si requiero una lista estática de combinaciones sin multiplicación cartesiana, omito las claves del nivel superior y defino la lista de combinaciones deseadas directamente dentro de un `include` vacío:
     ```yaml
     strategy:
       matrix:
@@ -293,11 +296,11 @@ El alumno debe:
 •	Explicar solución
 
 **SOLUCIÓN — CASO C:**
-*   **Posibles Causas**: El scope de los outputs en workflows reutilizables es cerrado. Los problemas comunes incluyen:
+*   **Posibles Causas que identifico**: El scope de los outputs en workflows reutilizables es cerrado por defecto. Los problemas comunes que identifico son:
     1.  No declarar explícitamente el output bajo `on.workflow_call.outputs` a nivel de interfaz del archivo reusable (hijo).
     2.  No mapear el output de un paso interno (`steps.mi-paso.outputs.mi-val`) con el output del job del reusable (`jobs.mi-job.outputs`).
-    3.  En el workflow llamador (padre), intentar acceder al output sin establecer la dependencia mediante `needs: [reusable-job-id]`.
-*   **Solución**: Declarar explícitamente la interfaz en ambos niveles.
+    3.  En mi workflow llamador (padre), intentar acceder al output sin establecer la dependencia mediante `needs: [reusable-job-id]`.
+*   **Mi Propuesta de Solución**: Declarar explícitamente la interfaz en ambos niveles de la siguiente forma:
     *   *En el reusable (hijo):*
         ```yaml
         on:
@@ -311,26 +314,26 @@ El alumno debe:
               status: ${{ steps.step1.outputs.valor }}
             # ...
         ```
-    *   *En el llamador (padre):* Consumir el output referenciándolo directamente con `needs.reusable-job-id.outputs.resultado`.
+    *   *En el llamador (padre):* Consumo el output referenciándolo directamente con `needs.reusable-job-id.outputs.resultado`.
 ________________________________________
 Preguntas teóricas cortas
 1.	Diferencia entre hosted y self-hosted runners.
     *   **Hosted**: Servidores limpios administrados enteramente por GitHub que se crean bajo demanda para cada ejecución y se destruyen inmediatamente después de finalizar el job.
-    *   **Self-hosted**: Servidores físicos o virtuales administrados por el usuario, permitiendo personalización extrema de hardware y acceso directo a redes locales privadas, pero requiriendo mantenimiento y parches de seguridad manuales.
+    *   **Self-hosted**: Servidores físicos o virtuales administrados por mí o mi equipo, permitiendo personalización extrema de hardware y acceso directo a redes locales privadas, pero requiriendo mantenimiento y parches de seguridad manuales.
 
 2.	Diferencia entre vars y secrets.
     *   **Vars**: Almacenan variables y configuraciones comunes no sensibles en texto plano (ej. nombres de servidor, puertos). Son legibles en el YAML y los logs.
     *   **Secrets**: Almacenan información sensible (ej. contraseñas, api keys) que GitHub encripta en reposo y enmascara de forma automática en los logs con asteriscos (`***`) para evitar su divulgación accidental.
 
 3.	Cuándo usar reusable workflow frente a composite action.
-    *   **Reusable Workflow**: Se usa para reutilizar flujos de pipeline completos con múltiples jobs, aislamiento de seguridad, herencia nativa de secretos y compatibilidad de entornos.
-    *   **Composite Action**: Se usa para empaquetar una secuencia básica de pasos (`steps`) reutilizables dentro de un mismo job y sistema de archivos.
+    *   **Reusable Workflow**: Lo utilizo para reutilizar flujos de pipeline completos con múltiples jobs, aislamiento de seguridad, herencia nativa de secretos y compatibilidad de entornos.
+    *   **Composite Action**: Lo utilizo para empaquetar una secuencia básica de pasos (`steps`) reutilizables dentro de un mismo job y sistema de archivos.
 
 4.	Qué riesgos tiene usar actions externas sin pinning.
-    *   Permite ataques en la cadena de suministro si un atacante compromete la cuenta del creador de la acción y sube código malicioso sobreescribiendo el tag mutable (ej. `@v3`). El pipeline descargará el código malicioso automáticamente, comprometiendo variables, secretos e infraestructura.
+    *   Permite ataques en la cadena de suministro si un atacante compromete la cuenta del creador de la acción y sube código malicioso sobreescribiendo el tag mutable (ej. `@v3`). Mi pipeline descargará el código malicioso automáticamente, comprometiendo variables, secretos e infraestructura.
 
 5.	Qué ventajas aporta OIDC.
-    *   Permite la federación de identidades de corta duración para conectarse a nubes (AWS/Azure/GCP) mediante tokens dinámicos temporales generados por GitHub. Resuelve el riesgo al eliminar las credenciales persistentes de larga duración en los secretos de GitHub.
+    *   Permite la federación de identidades de corta duración para conectarme a nubes (AWS/Azure/GCP) mediante tokens dinámicos temporales generados por GitHub. Resuelve el riesgo al eliminar las credenciales persistentes de larga duración en los secretos de GitHub.
 
 6.	Qué contexts suelen provocar más errores.
     *   El contexto `env` (no disponible en la fase de parseo sintáctico de inicialización a nivel de `concurrency` o `runs-on`) y el contexto `secrets` (debido a limitaciones de scope y herencia ausente en sub-workflows reutilizables si no se declara `secrets: inherit`).
