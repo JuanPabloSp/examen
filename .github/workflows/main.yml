@@ -20,7 +20,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {} # Hardening global (denegar todos por defecto)
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
 
 jobs:
   # -------------------------------------------------------------
