@@ -1,0 +1,40 @@
+name: Reusable Validation
+
+on:
+  workflow_call:
+    inputs:
+      target-path:
+        description: "Directorio a validar"
+        required: true
+        type: string
+      run-security-scan:
+        description: "Habilitar escaneo de seguridad estático"
+        required: false
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  validate:
+    name: Code Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Run Quality Checks
+        run: |
+          echo "Ejecutando linter estático de código en el directorio: ${{ inputs.target-path }}"
+          # Simulación de control corporativo de calidad
+          echo "Linter completado con éxito sin errores."
+
+      - name: Static Application Security Testing (SAST)
+        if: ${{ inputs.run-security-scan }}
+        run: |
+          echo "Iniciando escaneo de seguridad (SAST)..."
+          echo "Buscando secretos expuestos y malas prácticas en: ${{ inputs.target-path }}"
+          # Simulación de herramienta de análisis estático
+          echo "Análisis de seguridad completado. Vulnerabilidades detectadas: 0."

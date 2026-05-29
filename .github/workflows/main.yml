@@ -1,0 +1,209 @@
+name: Enterprise Orchestrator Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches:
+      - main
+      - staging
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {} # Hardening global (denegar todos por defecto)
+
+jobs:
+  # -------------------------------------------------------------
+  # ETAPA 1: DETECCIÓN SELECTIVA DE CAMBIOS (Selective Execution)
+  # -------------------------------------------------------------
+  detect-changes:
+    name: Detect Component Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      infrastructure: ${{ steps.filter.outputs.infrastructure }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Filter Changed Paths
+        id: filter
+        uses: dorny/paths-filter@402f067756f71d5337ca5ad56f8f5370d9a6db6e # v3.0.2
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            infrastructure:
+              - 'infrastructure/**'
+
+  # -------------------------------------------------------------
+  # ETAPA 2: VALIDACIÓN COMÚN (LINTER & SEGURIDAD)
+  # -------------------------------------------------------------
+  validate-frontend:
+    name: Validate Frontend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/reusable-validate.yml
+    with:
+      target-path: "./frontend"
+      run-security-scan: true
+
+  validate-backend:
+    name: Validate Backend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    uses: ./.github/workflows/reusable-validate.yml
+    with:
+      target-path: "./backend"
+      run-security-scan: true
+
+  validate-infra:
+    name: Validate Infrastructure
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infrastructure == 'true'
+    uses: ./.github/workflows/reusable-validate.yml
+    with:
+      target-path: "./infrastructure"
+      run-security-scan: true
+
+  # -------------------------------------------------------------
+  # ETAPA 3: TESTING PARALELO MULTI-PLATAFORMA (Matrix Strategy)
+  # -------------------------------------------------------------
+  test-backend:
+    name: Test Backend Matrix
+    needs: [detect-changes, validate-backend]
+    if: needs.detect-changes.outputs.backend == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        runtime: ["18", "20"]
+        exclude:
+          # Exclusión corporativa para optimizar costes de cómputo en Windows
+          - os: windows-latest
+            runtime: "18"
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      node-version: ${{ matrix.runtime }}
+      os: ${{ matrix.os }}
+      directory: "./backend"
+
+  test-frontend:
+    name: Test Frontend
+    needs: [detect-changes, validate-frontend]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      node-version: "20"
+      os: "ubuntu-latest"
+      directory: "./frontend"
+
+  # -------------------------------------------------------------
+  # ETAPA 4: COMPILACIÓN (Reusabilidad & Artefactos)
+  # -------------------------------------------------------------
+  build-frontend:
+    name: Build Frontend
+    needs: [detect-changes, test-frontend]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      component-name: "frontend"
+      environment: "staging"
+
+  build-backend:
+    name: Build Backend
+    needs: [detect-changes, test-backend]
+    if: needs.detect-changes.outputs.backend == 'true'
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      component-name: "backend"
+      environment: "staging"
+
+  # -------------------------------------------------------------
+  # ETAPA 5: DESPLIEGUE POR ENTORNOS (Staging & Production con Aprobación)
+  # -------------------------------------------------------------
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build-frontend, build-backend]
+    if: always() && (needs.build-frontend.result == 'success' || needs.build-backend.result == 'success')
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    permissions:
+      contents: read
+      id-token: write # Permiso OIDC requerido para federación cloud
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Deploy to Cloud (OIDC Trust Setup)
+        run: |
+          echo "Autenticándose vía OIDC en AWS/Azure..."
+          echo "Desplegando en entorno STAGING..."
+          echo "Despliegue finalizado con éxito."
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging]
+    # Restricción corporativa estricta: solo despliega en producción desde la rama main
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production # Requiere aprobación y restricciones en la UI de GitHub
+    permissions:
+      contents: read
+      id-token: write # Permiso OIDC requerido para federación cloud
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Deploy to Cloud Production (OIDC Authenticated)
+        run: |
+          echo "Estableciendo sesión OIDC segura..."
+          echo "Instalando compilados de producción..."
+          echo "Desplegando infraestructura en producción..."
+          echo "El despliegue en producción finalizó con éxito."
+
+  # -------------------------------------------------------------
+  # ETAPA 6: REPORTING Y AUDITORÍA
+  # -------------------------------------------------------------
+  generate-audit-report:
+    name: Generate Step Summary Report
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Generate Corporate Step Summary
+        run: |
+          echo "### :bank: GlobalFin Services - Resumen de Ejecución CI/CD" >> $GITHUB_STEP_SUMMARY
+          echo "#### Estado de Componentes de esta Ejecución:" >> $GITHUB_STEP_SUMMARY
+          echo "| Job / Componente | Resultado |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Cambios Detectados | ${{ needs.detect-changes.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validación Frontend | ${{ needs.validate-frontend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validación Backend | ${{ needs.validate-backend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Backend Matrix | ${{ needs.test-backend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Frontend | ${{ needs.test-frontend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Compilación Frontend | ${{ needs.build-frontend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Compilación Backend | ${{ needs.build-backend.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Despliegue Staging | ${{ needs.deploy-staging.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Despliegue Production | ${{ needs.deploy-production.result || 'Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Reporte generado el: **$(date)**" >> $GITHUB_STEP_SUMMARY

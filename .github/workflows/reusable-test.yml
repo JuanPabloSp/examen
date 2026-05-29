@@ -1,0 +1,59 @@
+name: Reusable Test
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Versión de Node.js a utilizar"
+        required: true
+        type: string
+      os:
+        description: "Sistema operativo del Runner"
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      directory:
+        description: "Directorio del componente a testear"
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  test:
+    name: Test on ${{ inputs.os }} (Node ${{ inputs.node-version }})
+    runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@60a22d486ca6b5730d9a8abbec2ee1d1a3f2e51b # v4.0.3
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Cache Node Modules
+        id: cache-dependencies
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            **/node_modules
+            ~/.npm
+          key: ${{ inputs.os }}-node-${{ inputs.node-version }}-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ inputs.os }}-node-${{ inputs.node-version }}-modules-
+
+      - name: Install Dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          echo "Ejecutando instalación limpia de dependencias en: ${{ inputs.directory }}"
+          # En un proyecto real: npm ci
+          echo "Dependencias instaladas correctamente."
+
+      - name: Run Component Tests
+        run: |
+          echo "Iniciando set de pruebas unitarias en: ${{ inputs.directory }}"
+          # En un proyecto real: npm test
+          echo "Pruebas unitarias completadas: 100% exitosas."
