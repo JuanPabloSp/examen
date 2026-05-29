@@ -37,6 +37,9 @@ Diseñamos un monorepo ordenado donde cada componente se encuentra aislado en su
 *   `/infrastructure`: Contiene el código de infraestructura como código (IaC con Terraform).
 *   `/docs`: Contiene la documentación técnica del proyecto en Markdown.
 *   `.github/workflows/`: Directorio centralizado donde residen todos los archivos de configuración de GitHub Actions.
+
+> :camera: **[CAPTURA DE PANTALLA: ESTRUCTURA DEL MONOREPO]**
+> ![Estructura del Monorepo en VS Code](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20101121.png)
 ________________________________________
 Parte 2 — Selective execution
 Implementar lógica para:
@@ -49,8 +52,8 @@ Implementar lógica para:
 2.  **Detectar Componentes Modificados**: Usamos la acción verificada `dorny/paths-filter` para auditar qué directorios sufrieron cambios.
 3.  **Ejecutar solo pipelines necesarios**: Los resultados del filtro se exportan como `outputs` lógicos del primer job, permitiendo que los jobs subsecuentes usen la condicional `if` para ejecutarse o saltarse según corresponda.
 
-> :camera: **[CAPTURA DE PANTALLA RECOMENDADA: SELECTIVE EXECUTION]**
-> *Coloque aquí una captura del grafo de GitHub Actions donde se visualice el efecto del filtro de rutas. Se debe observar el job 'Detect Component Changes' en verde exitoso y los jobs dependientes del código ('Validate Frontend', 'Test Frontend', etc.) omitidos en gris/cruzado cuando solo se edita la configuración general.*
+> :camera: **[CAPTURA DE PANTALLA: SELECTIVE EXECUTION (OMISIÓN)]**
+> ![Grafo de Ejecución Selectiva - Jobs Omitidos](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20100727.png)
 
 
 *Ejemplo en el orquestador principal:*
@@ -182,6 +185,9 @@ strategy:
       - os: windows-latest
         runtime: "18"
 ```
+
+> :camera: **[CAPTURA DE PANTALLA: EJECUCIÓN COMPLETA DE LA MATRIZ (ALL GREEN)]**
+> ![Grafo de Ejecución Completa con Matriz y Test Exitosos](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20100948.png)
 ________________________________________
 Optimización
 Aplicar:
@@ -205,8 +211,8 @@ Generar:
 1.  **Summaries Markdown**: Al final de la ejecución, generamos un reporte consolidado utilizando la variable corporativa `$GITHUB_STEP_SUMMARY` para plasmar los estados de cada job en una tabla visual.
 2.  **Artifacts Relevantes**: Subimos los reportes y binarios compilados de compilación usando la acción `actions/upload-artifact` a nivel de workflow reusable.
 
-> :camera: **[CAPTURA DE PANTALLA RECOMENDADA: STEP SUMMARY REPORT]**
-> *Coloque aquí una captura de pantalla de la tabla corporativa Markdown de estados. Se genera automáticamente y se visualiza en la pestaña "Summary" de tu ejecución de GitHub Actions, bajo el título "GlobalFin Services - Resumen de Ejecución CI/CD".*
+> :camera: **[CAPTURA DE PANTALLA: CORPORATE STEP SUMMARY REPORT]**
+> ![Tabla Corporativa de Resumen de Ejecución en Markdown](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20101303.png)
 
 ________________________________________
 Ejercicio 4 — Self-hosted runners
