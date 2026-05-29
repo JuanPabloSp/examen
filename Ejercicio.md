@@ -49,6 +49,10 @@ Implementar lógica para:
 2.  **Detectar Componentes Modificados**: Usamos la acción verificada `dorny/paths-filter` para auditar qué directorios sufrieron cambios.
 3.  **Ejecutar solo pipelines necesarios**: Los resultados del filtro se exportan como `outputs` lógicos del primer job, permitiendo que los jobs subsecuentes usen la condicional `if` para ejecutarse o saltarse según corresponda.
 
+> :camera: **[CAPTURA DE PANTALLA RECOMENDADA: SELECTIVE EXECUTION]**
+> *Coloque aquí una captura del grafo de GitHub Actions donde se visualice el efecto del filtro de rutas. Se debe observar el job 'Detect Component Changes' en verde exitoso y los jobs dependientes del código ('Validate Frontend', 'Test Frontend', etc.) omitidos en gris/cruzado cuando solo se edita la configuración general.*
+
+
 *Ejemplo en el orquestador principal:*
 ```yaml
 on:
@@ -197,6 +201,10 @@ Generar:
 **SOLUCIÓN — REPORTING:**
 1.  **Summaries Markdown**: Al final de la ejecución, generamos un reporte consolidado utilizando la variable corporativa `$GITHUB_STEP_SUMMARY` para plasmar los estados de cada job en una tabla visual.
 2.  **Artifacts Relevantes**: Subimos los reportes y binarios compilados de compilación usando la acción `actions/upload-artifact` a nivel de workflow reusable.
+
+> :camera: **[CAPTURA DE PANTALLA RECOMENDADA: STEP SUMMARY REPORT]**
+> *Coloque aquí una captura de pantalla de la tabla corporativa Markdown de estados. Se genera automáticamente y se visualiza en la pestaña "Summary" de tu ejecución de GitHub Actions, bajo el título "GlobalFin Services - Resumen de Ejecución CI/CD".*
+
 ________________________________________
 Ejercicio 4 — Self-hosted runners
 Objetivo
