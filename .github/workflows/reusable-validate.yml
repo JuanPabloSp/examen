@@ -28,13 +28,26 @@ jobs:
       - name: Run Quality Checks
         run: |
           echo "Ejecutando linter estático de código en el directorio: ${{ inputs.target-path }}"
-          # Simulación de control corporativo de calidad
-          echo "Linter completado con éxito sin errores."
+          # Buscar todos los archivos JS en el directorio objetivo y validar su sintaxis
+          js_files=$(find ${{ inputs.target-path }} -name "*.js" 2>/dev/null || true)
+          if [ -z "$js_files" ]; then
+            echo "No se encontraron archivos JavaScript para analizar."
+          else
+            for file in $js_files; do
+              echo "Validando sintaxis de JavaScript para: $file"
+              node --check "$file"
+            done
+            echo "Linter completado con éxito: Todos los archivos JavaScript tienen una sintaxis correcta."
+          fi
 
       - name: Static Application Security Testing (SAST)
         if: ${{ inputs.run-security-scan }}
         run: |
-          echo "Iniciando escaneo de seguridad (SAST)..."
-          echo "Buscando secretos expuestos y malas prácticas en: ${{ inputs.target-path }}"
-          # Simulación de herramienta de análisis estático
-          echo "Análisis de seguridad completado. Vulnerabilidades detectadas: 0."
+          echo "Iniciando escaneo estático de seguridad (SAST)..."
+          echo "Buscando secretos expuestos y tokens en: ${{ inputs.target-path }}"
+          # Buscar patrones comunes de secretos como API_KEY o PASSWORD (excluyendo markdown)
+          if grep -r -i -E "api_key|password|secret_token|private_key" ${{ inputs.target-path }} --exclude="*.md" 2>/dev/null; then
+            echo "WARNING: Se han detectado posibles secretos en el código fuente. Por favor, revíselos."
+          else
+            echo "Escaneo de seguridad completado: Cero secretos o vulnerabilidades detectadas."
+          fi
