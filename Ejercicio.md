@@ -87,6 +87,9 @@ Creamos tres workflows reutilizables parametrizados bajo el disparador `workflow
 1.  **Validaciones Comunes (`reusable-validate.yml`)**: Centraliza los análisis estáticos de código (linters) y escaneos de seguridad corporativos (SAST). Recibe el `target-path` como parámetro.
 2.  **Testing (`reusable-test.yml`)**: Ejecuta el set de pruebas unitarias sobre un entorno aislado. Recibe como parámetros `node-version`, `os` y `directory`, optimizando dependencias mediante caché.
 3.  **Compilación (`reusable-build.yml`)**: Compila la aplicación, genera un reporte y empaqueta el compilado usando `actions/upload-artifact`. Define outputs lógicos de éxito (`build-status`) consumibles por el pipeline padre.
+
+*   **Comprobación Práctica en Laboratorio (Test Realizado)**:
+    Para validar estos workflows, implementamos lógica funcional y ligera en `reusable-validate.yml` que realiza un análisis sintáctico con `node --check` sobre los archivos JavaScript reales del monorepo (`index.js`) y un escáner de seguridad automatizado basado en `grep` para detectar fugas de contraseñas u otros secretos corporativos. Los resultados del test corren de forma exitosa en el entorno oficial de GitHub Actions.
 ________________________________________
 Ejercicio 2 — Seguridad enterprise
 Objetivo
