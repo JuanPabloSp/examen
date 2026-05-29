@@ -39,7 +39,7 @@ Diseñamos un monorepo ordenado donde cada componente se encuentra aislado en su
 *   `.github/workflows/`: Directorio centralizado donde residen todos los archivos de configuración de GitHub Actions.
 
 > :camera: **[CAPTURA DE PANTALLA: ESTRUCTURA DEL MONOREPO]**
-> ![Estructura del Monorepo en VS Code](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20101121.png)
+> ![Estructura del Monorepo en VS Code](./img/Captura%20de%20pantalla%202026-05-29%20101121.png)
 ________________________________________
 Parte 2 — Selective execution
 Implementar lógica para:
@@ -53,7 +53,7 @@ Implementar lógica para:
 3.  **Ejecutar solo pipelines necesarios**: Los resultados del filtro se exportan como `outputs` lógicos del primer job, permitiendo que los jobs subsecuentes usen la condicional `if` para ejecutarse o saltarse según corresponda.
 
 > :camera: **[CAPTURA DE PANTALLA: SELECTIVE EXECUTION (OMISIÓN)]**
-> ![Grafo de Ejecución Selectiva - Jobs Omitidos](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20100727.png)
+> ![Grafo de Ejecución Selectiva - Jobs Omitidos](./img/Captura%20de%20pantalla%202026-05-29%20100727.png)
 
 
 *Ejemplo en el orquestador principal:*
@@ -187,7 +187,7 @@ strategy:
 ```
 
 > :camera: **[CAPTURA DE PANTALLA: EJECUCIÓN COMPLETA DE LA MATRIZ (ALL GREEN)]**
-> ![Grafo de Ejecución Completa con Matriz y Test Exitosos](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20100948.png)
+> ![Grafo de Ejecución Completa con Matriz y Test Exitosos](./img/Captura%20de%20pantalla%202026-05-29%20100948.png)
 ________________________________________
 Optimización
 Aplicar:
@@ -212,7 +212,7 @@ Generar:
 2.  **Artifacts Relevantes**: Subimos los reportes y binarios compilados de compilación usando la acción `actions/upload-artifact` a nivel de workflow reusable.
 
 > :camera: **[CAPTURA DE PANTALLA: CORPORATE STEP SUMMARY REPORT]**
-> ![Tabla Corporativa de Resumen de Ejecución en Markdown](file:///c:/Users/ADM/Desktop/examen/img/Captura%20de%20pantalla%202026-05-29%20101303.png)
+> ![Tabla Corporativa de Resumen de Ejecución en Markdown](./img/Captura%20de%20pantalla%202026-05-29%20101303.png)
 
 ________________________________________
 Ejercicio 4 — Self-hosted runners
