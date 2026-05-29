@@ -54,6 +54,9 @@ Implementar lógica para:
 
 > :camera: **[CAPTURA DE PANTALLA: SELECTIVE EXECUTION (OMISIÓN)]**
 > ![Grafo de Ejecución Selectiva - Jobs Omitidos](./img/Captura%20de%20pantalla%202026-05-29%20100727.png)
+> 
+> :camera: **[CAPTURA DE PANTALLA: RESUMEN DE COMPONENTES OMITIDOS (STEP SUMMARY)]**
+> ![Tabla Markdown con Componentes Omitidos](./img/Captura%20de%20pantalla%202026-05-29%20101452.png)
 
 *Ejemplo en mi orquestador principal:*
 ```yaml
@@ -212,6 +215,9 @@ Generar:
 
 > :camera: **[CAPTURA DE PANTALLA: CORPORATE STEP SUMMARY REPORT]**
 > ![Tabla Corporativa de Resumen de Ejecución en Markdown](./img/Captura%20de%20pantalla%202026-05-29%20101303.png)
+> 
+> :camera: **[CAPTURA DE PANTALLA: VISTA GENERAL DE EJECUCIÓN COMPLETA Y REPORTE]**
+> ![Vista General del Pipeline y Tabla en Actions](./img/Captura%20de%20pantalla%202026-05-29%20101438.png)
 ________________________________________
 Ejercicio 4 — Self-hosted runners
 Objetivo
